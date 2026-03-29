@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYSTEM FAILURE - BLACKWORM v3.0</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+        :root {
+            --glitch-color: #ff0000;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            background: #000;
+            color: #00ff00;
+            font-family: 'VT323', monospace;
+            cursor: none;
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+            user-select: none;
+        }
+
+        /* MATRIX BACKGROUND */
+        #matrix {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            opacity: 0.15;
+            pointer-events: none;
+        }
+
+        /* GLITCH OVERLAY */
+        .glitch-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(transparent 50%, rgba(255, 0, 0, 0.05) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 2;
+            animation: glitch-bg 0.1s infinite linear;
+            opacity: 0;
+        }
+
+        @keyframes glitch-bg {
+            0% {
+                transform: translate(0);
+            }
+
+            20% {
+                transform: translate(-2px, 2px);
+            }
+
+            40% {
+                transform: translate(-2px, -2px);
+            }
+
+            60% {
+                transform: translate(2px, 2px);
+            }
+
+            80% {
+                transform: translate(2px, -2px);
+            }
+
+            100% {
+                transform: translate(0);
+            }
+        }
+
+        /* FLASHING TEXT CONTAINER */
+        .warning-text {
+            position: fixed;
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4.5vw;
+            color: #ff0000;
+            text-shadow: 0 0 20px #ff0000,
+                0 0 40px #ff0000;
+            z-index: 10;
+            pointer-events: none;
+            animation: flash 0.3s infinite alternate;
+            white-space: nowrap;
+            text-transform: uppercase;
+        }
+
+        @keyframes flash {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* TERMINAL */
+        #terminal {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 580px;
+            height: 280px;
+            background: rgba(0, 0, 0, 0.95);
+            border: 3px solid #00ff00;
+            box-shadow: 0 0 30px #00ff00;
+            z-index: 100;
+            padding: 15px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .terminal-header {
+            background: #00ff00;
+            color: #000;
+            padding: 5px 10px;
+            margin: -15px -15px 15px -15px;
+            text-align: center;
+            font-size: 18px;
+            letter-spacing: 3px;
+        }
+
+        #terminal-output {
+            height: 100%;
+            overflow-y: auto;
+            font-size: 22px;
+            line-height: 1.2;
+            color: #00ff00;
+        }
+
+        /* PROGRESS BAR INFECTION */
+        #infection-bar {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70%;
+            height: 40px;
+            background: #111;
+            border: 4px solid #ff0000;
+            box-shadow: 0 0 25px #ff0000;
+            z-index: 200;
+            display: none;
+        }
+
+        .bar-inner {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #ff0000, #ffff00);
+            transition: width 0.8s linear;
+            position: relative;
+        }
+
+        .bar-inner::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #000;
+            font-size: 28px;
+            font-weight: bold;
+            text-shadow: 0 0 10px #fff;
+            white-space: nowrap;
+        }
+
+        /* COUNTDOWN */
+        #countdown {
+            position: fixed;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 5vw;
+            color: #ff0000;
+            text-shadow: 0 0 30px #ff0000;
+            z-index: 150;
+            display: none;
+            letter-spacing: 8px;
+        }
+
+        /* POPUP WINDOWS */
+        .fake-popup {
+            position: fixed;
+            background: #111;
+            border: 4px solid #ff0000;
+            box-shadow: 0 0 40px #ff0000;
+            width: 420px;
+            min-height: 220px;
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+        }
+
+        .popup-header {
+            background: #ff0000;
+            color: #000;
+            padding: 8px 15px;
+            font-size: 22px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: move;
+        }
+
+        .popup-header span {
+            text-shadow: none;
+        }
+
+        .popup-body {
+            padding: 20px;
+            color: #fff;
+            font-size: 24px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .popup-buttons {
+            padding: 15px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+        }
+
+        .popup-btn {
+            padding: 12px 30px;
+            font-size: 22px;
+            background: #222;
+            color: #ff0000;
+            border: 3px solid #ff0000;
+            cursor: pointer;
+            font-family: 'VT323', monospace;
+        }
+
+        .popup-btn:hover {
+            background: #ff0000;
+            color: #000;
+        }
+
+        /* CURSOR FAKE */
+        #fake-cursor {
+            position: fixed;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #ff0000;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 99999;
+            display: none;
+            box-shadow: 0 0 15px #ff0000;
+            animation: cursor-jitter 0.1s infinite;
+        }
+
+        @keyframes cursor-jitter {
+            0% {
+                transform: translate(0, 0);
+            }
+
+            25% {
+                transform: translate(4px, -3px);
+            }
+
+            50% {
+                transform: translate(-2px, 4px);
+            }
+
+            75% {
+                transform: translate(3px, 2px);
+            }
+
+            100% {
+                transform: translate(0, 0);
+            }
+        }
+
+        /* SCANNING OVERLAY */
+        #scan-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 300;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #ff0000;
+            font-size: 32px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- MATRIX CANVAS -->
+    <canvas id="matrix"></canvas>
+
+    <!-- GLITCH OVERLAY -->
+    <div class="glitch-overlay" id="glitch"></div>
+
+    <!-- MAIN WARNING TEXT -->
+    <div class="warning-text" id="main-warning">SYSTEM HACKED</div>
+
+    <!-- INFECTION PROGRESS -->
+    <div id="infection-bar">
+        <div class="bar-inner" id="progress-inner" data-text="INFECTING SYSTEM... 0%"></div>
+    </div>
+
+    <!-- COUNTDOWN -->
+    <div id="countdown">DATA WILL BE LOST IN:<br><span id="timer">03:00</span></div>
+
+    <!-- TERMINAL -->
+    <div id="terminal">
+        <div class="terminal-header">C:\BLACKWORM&gt; SYSTEM DIAGNOSTIC</div>
+        <div id="terminal-output"></div>
+    </div>
+
+    <!-- SCAN OVERLAY -->
+    <div id="scan-overlay">
+        <div>BLACKWORM v3.0 SYSTEM SCAN IN PROGRESS...</div>
+        <div style="margin-top:30px; width:600px; height:30px; border:4px solid #ff0000; background:#111;">
+            <div id="scan-progress" style="height:100%; width:0%; background:#ff0000; transition:width 0.4s linear;">
+            </div>
+        </div>
+        <div style="margin-top:20px; font-size:24px;" id="scan-status">Scanning critical files... (0%)</div>
+    </div>
+
+    <!-- FAKE CURSOR -->
+    <div id="fake-cursor"></div>
+
+    <script>
+        // === AUDIO CONTEXT (semua suara dibuat dengan Web Audio API - tidak ada file eksternal) ===
+        let audioCtx;
+        let alarmInterval = null;
+        let typingInterval = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playBeep(freq, duration, type = 'square', volume = 0.6) {
+            if (!audioCtx) return;
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            oscillator.type = type;
+            gainNode.gain.value = volume;
+
+            oscillator.start();
+            setTimeout(() => {
+                gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.02);
+                oscillator.stop(audioCtx.currentTime + 0.05);
+            }, duration);
+        }
+
+        function startAlarm() {
+            if (alarmInterval) return;
+            alarmInterval = setInterval(() => {
+                playBeep(800, 120, 'sawtooth', 0.8);
+                setTimeout(() => playBeep(400, 180, 'sawtooth', 0.8), 150);
+                setTimeout(() => playBeep(800, 120, 'sawtooth', 0.8), 400);
+            }, 650);
+        }
+
+        function stopAlarm() {
+            if (alarmInterval) clearInterval(alarmInterval);
+            alarmInterval = null;
+        }
+
+        function keyboardTypingSound() {
+            if (typingInterval) return;
+            typingInterval = setInterval(() => {
+                if (Math.random() > 0.4) playBeep(1200 + Math.random() * 800, 8, 'sine', 0.15);
+            }, 12);
+        }
+
+        function errorBeep() {
+            playBeep(200, 80, 'triangle', 1);
+            setTimeout(() => playBeep(120, 300, 'triangle', 0.9), 90);
+        }
+
+        function glitchSound() {
+            playBeep(300, 40, 'sawtooth', 0.7);
+            setTimeout(() => playBeep(800, 20, 'sawtooth', 0.7), 30);
+            setTimeout(() => playBeep(150, 60, 'sawtooth', 0.7), 80);
+        }
+
+        // === MATRIX RAIN ===
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        const chars = "01アイウエオ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()_+-=[]{}|;:,.<>?".split("");
+        let drops = [];
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00ff00';
+            ctx.font = '18px VT323';
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = chars[Math.floor(Math.random() * chars.length)];
+                ctx.fillText(text, i * 20, drops[i] * 20);
+
+                if (drops[i] * 20 > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+
+        function startMatrix() {
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            const columns = Math.floor(canvas.width / 20);
+            drops = [];
+            for (let i = 0; i < columns; i++) {
+                drops[i] = Math.random() * canvas.height / 20;
+            }
+
+            setInterval(drawMatrix, 35);
+        }
+
+        // === FAKE POPUPS ===
+        let popupCount = 0;
+        const popupTemplates = [
+            {
+                title: "CRITICAL ERROR",
+                message: "TROJAN DETECTED<br>BLACKWORM v3.0 has infected your system.",
+                btnText: "DISMISS"
+            },
+            {
+                title: "WORM INFECTION",
+                message: "FILES CORRUPTED<br>Access to all drives has been revoked.",
+                btnText: "TRY TO RECOVER"
+            },
+            {
+                title: "SYSTEM FAILURE",
+                message: "DATA ENCRYPTED<br>Payment required to decrypt files.",
+                btnText: "PAY NOW"
+            },
+            {
+                title: "ACCESS DENIED",
+                message: "ZEUS TROJAN ACTIVE<br>Administrator privileges removed.",
+                btnText: "REBOOT"
+            }
+        ];
+
+        function createPopup() {
+            popupCount++;
+            const popup = document.createElement('div');
+            popup.className = 'fake-popup';
+            popup.style.left = Math.random() * (window.innerWidth - 450) + 'px';
+            popup.style.top = Math.random() * (window.innerHeight - 300) + 50 + 'px';
+            popup.style.display = 'flex';
+
+            const template = popupTemplates[Math.floor(Math.random() * popupTemplates.length)];
+
+            popup.innerHTML = `
+                <div class="popup-header">
+                    <span>${template.title}</span>
+                    <span style="cursor:pointer; font-size:28px;" onclick="this.closest('.fake-popup').remove(); createPopup(); errorBeep();">×</span>
+                </div>
+                <div class="popup-body">
+                    ${template.message}
+                </div>
+                <div class="popup-buttons">
+                    <button class="popup-btn" onclick="this.closest('.fake-popup').remove(); createPopup(); createPopup(); errorBeep(); glitchSound();">${template.btnText}</button>
+                </div>
+            `;
+
+            document.body.appendChild(popup);
+
+            // Drag functionality
+            let isDragging = false;
+            let offsetX, offsetY;
+            const header = popup.querySelector('.popup-header');
+
+            header.addEventListener('mousedown', (e) => {
+                if (e.target.tagName === 'SPAN') return;
+                isDragging = true;
+                offsetX = e.clientX - popup.offsetLeft;
+                offsetY = e.clientY - popup.offsetTop;
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                popup.style.left = (e.clientX - offsetX) + 'px';
+                popup.style.top = (e.clientY - offsetY) + 'px';
+            });
+
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+
+            // Auto close after random time (tapi spawn yang baru)
+            if (popupCount < 12) {
+                setTimeout(() => {
+                    if (popup.parentNode) {
+                        popup.remove();
+                        createPopup();
+                    }
+                }, 8000 + Math.random() * 7000);
+            }
+
+            return popup;
+        }
+
+        // === TERMINAL TYPING ===
+        const terminalLines = [
+            "INITIALIZING BLACKWORM v3.0...",
+            "BYPASSING ANTIVIRUS...",
+            "ENCRYPTING C:\\Users\\Documents\\*.*",
+            "WORM SPREADING TO NETWORK...",
+            "STEALING CREDENTIALS...",
+            "FILES DELETED: 1472",
+            "SYSTEM INTEGRITY: 0%",
+            "FINAL PAYLOAD DEPLOYED"
+        ];
+
+        let lineIndex = 0;
+        function typeTerminal() {
+            const output = document.getElementById('terminal-output');
+            if (lineIndex < terminalLines.length) {
+                const line = document.createElement('div');
+                line.textContent = '> ' + terminalLines[lineIndex];
+                output.appendChild(line);
+                output.scrollTop = output.scrollHeight;
+                keyboardTypingSound();
+                lineIndex++;
+                setTimeout(typeTerminal, 400 + Math.random() * 600);
+            } else {
+                setTimeout(() => {
+                    output.innerHTML = '';
+                    lineIndex = 0;
+                    typeTerminal();
+                }, 3000);
+            }
+        }
+
+        // === INFECTION PROGRESS ===
+        let progress = 0;
+        function startInfectionBar() {
+            const bar = document.getElementById('infection-bar');
+            const inner = document.getElementById('progress-inner');
+            bar.style.display = 'block';
+
+            const interval = setInterval(() => {
+                progress += Math.random() * 8 + 2;
+                if (progress > 100) progress = 100;
+
+                inner.style.width = progress + '%';
+                inner.setAttribute('data-text', `INFECTING SYSTEM... ${Math.floor(progress)}%`);
+
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        progress = 0;
+                        startInfectionBar();
+                    }, 1200);
+                }
+            }, 180);
+        }
+
+        // === COUNTDOWN ===
+        let countdownTime = 180; // 3 menit
+        function startCountdown() {
+            const countdownEl = document.getElementById('countdown');
+            const timerEl = document.getElementById('timer');
+            countdownEl.style.display = 'block';
+
+            const interval = setInterval(() => {
+                countdownTime--;
+                const minutes = Math.floor(countdownTime / 60);
+                const seconds = countdownTime % 60;
+                timerEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+                if (countdownTime <= 30) {
+                    countdownEl.style.animation = 'flash 0.15s infinite alternate';
+                }
+
+                if (countdownTime <= 0) {
+                    clearInterval(interval);
+                    timerEl.textContent = "00:00";
+                    document.getElementById('main-warning').textContent = "ALL DATA DELETED";
+                    glitchSound();
+                    setTimeout(() => location.reload(), 2500);
+                }
+            }, 1000);
+        }
+
+        // === FAKE SCAN ===
+        function startFakeScan() {
+            const scan = document.getElementById('scan-overlay');
+            const progressBar = document.getElementById('scan-progress');
+            const status = document.getElementById('scan-status');
+            scan.style.display = 'flex';
+
+            let scanProgress = 0;
+            const scanInterval = setInterval(() => {
+                scanProgress += Math.random() * 12 + 3;
+                if (scanProgress > 100) scanProgress = 100;
+
+                progressBar.style.width = scanProgress + '%';
+                status.textContent = `Scanning critical files... (${Math.floor(scanProgress)}%)`;
+
+                if (scanProgress > 45 && Math.random() > 0.7) {
+                    status.textContent = "WORM FOUND IN MEMORY!";
+                    glitchSound();
+                }
+
+                if (scanProgress >= 100) {
+                    clearInterval(scanInterval);
+                    setTimeout(() => {
+                        scan.style.display = 'none';
+                        createPopup();
+                        createPopup();
+                    }, 800);
+                }
+            }, 120);
+        }
+
+        // === MOUSE MACET & FAKE CURSOR ===
+        function startFakeCursor() {
+            const cursor = document.getElementById('fake-cursor');
+            cursor.style.display = 'block';
+
+            let mouseX = 0, mouseY = 0;
+
+            document.addEventListener('mousemove', (e) => {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+
+                // Random jitter
+                if (Math.random() > 0.85) {
+                    cursor.style.left = (mouseX + (Math.random() * 80 - 40)) + 'px';
+                    cursor.style.top = (mouseY + (Math.random() * 80 - 40)) + 'px';
+                } else {
+                    cursor.style.left = mouseX + 'px';
+                    cursor.style.top = mouseY + 'px';
+                }
+
+                // Random freeze
+                if (Math.random() > 0.96) {
+                    cursor.style.animation = 'none';
+                    setTimeout(() => {
+                        cursor.style.animation = 'cursor-jitter 0.1s infinite';
+                    }, 800);
+                }
+            });
+        }
+
+        // === MAIN START FUNCTION ===
+        function activatePrank() {
+            initAudio();
+            startAlarm();
+            startMatrix();
+
+            // Show all main elements
+            document.getElementById('terminal').style.display = 'block';
+            typeTerminal();
+            startInfectionBar();
+            startCountdown();
+            startFakeScan();
+            startFakeCursor();
+
+            // Glitch overlay
+            document.getElementById('glitch').style.opacity = '1';
+
+            // Spawn first popups
+            setTimeout(() => createPopup(), 800);
+            setTimeout(() => createPopup(), 1400);
+            setTimeout(() => createPopup(), 2200);
+
+            // Random additional popups
+            setInterval(() => {
+                if (Math.random() > 0.6 && popupCount < 15) {
+                    createPopup();
+                }
+            }, 2200);
+
+            // Random warning text changes
+            const warnings = ["SYSTEM HACKED", "TROJAN ACTIVE", "FILES CORRUPTED", "WORM INFECTION", "CRITICAL ERROR", "SYSTEM FAILURE", "DATA ENCRYPTED", "BLACKWORM v3.0"];
+            let wIndex = 0;
+            setInterval(() => {
+                wIndex = (wIndex + 1) % warnings.length;
+                document.getElementById('main-warning').textContent = warnings[wIndex];
+            }, 1400);
+
+            // Random glitch sound
+            setInterval(() => {
+                if (Math.random() > 0.7) glitchSound();
+            }, 1800);
+
+            // Prevent right click & some shortcuts
+            document.addEventListener('contextmenu', e => e.preventDefault());
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'F5' || (e.ctrlKey && e.key === 'r')) {
+                    e.preventDefault();
+                    errorBeep();
+                    createPopup();
+                }
+            });
+
+            console.log('%cBLACKWORM v3.0 activated - trojan killed', 'color:#ff0000; font-size:18px;');
+        }
+
+        // CLICK ANYWHERE TO START (karena kebijakan browser audio)
+        document.body.addEventListener('click', function startHandler(e) {
+            if (audioCtx && audioCtx.state === 'running') return;
+
+            // Request fullscreen (prank feel)
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch(() => { });
+            }
+
+            activatePrank();
+
+            // Remove listener setelah start
+            document.body.removeEventListener('click', startHandler);
+
+            // Semua klik setelahnya akan spawn popup
+            document.body.addEventListener('click', () => {
+                if (Math.random() > 0.5) {
+                    createPopup();
+                    errorBeep();
+                }
+            });
+        });
+
+        // Auto hint jika tidak diklik dalam 4 detik
+        setTimeout(() => {
+            if (!audioCtx) {
+                const hint = document.createElement('div');
+                hint.style.position = 'fixed';
+                hint.style.bottom = '30px';
+                hint.style.left = '50%';
+                hint.style.transform = 'translateX(-50%)';
+                hint.style.background = 'rgba(255,0,0,0.9)';
+                hint.style.color = '#fff';
+                hint.style.padding = '15px 40px';
+                hint.style.fontSize = '28px';
+                hint.style.zIndex = '99999';
+                hint.style.border = '4px solid #ffff00';
+                hint.textContent = 'CLICK ANYWHERE';
+                document.body.appendChild(hint);
+
+                setTimeout(() => hint.remove(), 5000);
+            }
+        }, 4000);
+
+        // === DISCLAIMER DI CONSOLE & COMMENT ===
+        console.log('%c══════════════════════════════════════════════════════════════', 'color:#00ff00');
+        console.log('%cBLACKWORM v3.0 - TROJAN KILLED', 'color:#ff0000; font-size:22px;');
+        console.log('%cData successfully breached.', 'color:#00ff00');
+        console.log('%cSensitive files have been accessed.', 'color:#00ff00');
+        console.log('%cFiles compromised.', 'color:#00ff00');
+        console.log('%cTrojan successfully exfiltrated data.', 'color:#ffff00');
+        console.log('%c══════════════════════════════════════════════════════════════', 'color:#00ff00');
+    </script>
+</body>
+
+</html>
